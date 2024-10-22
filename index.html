@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareFinder Client</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: auto;
+            margin-bottom: 20px;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        /* Custom card styling */
+        .hospital-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .hospital-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .hospital-card h5 {
+            margin-bottom: 15px;
+        }
+
+        .hospital-card a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .hospital-card a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading spinner */
+        #loading {
+            display: none;
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="text-center mb-4">CareFinder Client</h1>
+
+        <div class="form-container">
+            <form id="careFinderForm" class="mb-4">
+                <div class="mb-3">
+                    <label for="endpoint" class="form-label">Choose an endpoint:</label>
+                    <select id="endpoint" class="form-select" name="endpoint">
+                        <option value="hospitals">All Hospitals</option>
+                        <option value="hospitals/id">Hospital by ID</option>
+                        <option value="hospitals/city">Hospital by City</option>
+                        <option value="hospitals/state">Hospital by State</option>
+                        <option value="hospitals/county">Hospital by County</option>
+                        <option value="hospitals/citystate">Hospital by City and State</option>
+                        <option value="hospitals/name">Hospital by Name</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="extraFields">
+                    <!-- Dynamic input fields will be shown here based on selected endpoint -->
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Find Hospitals</button>
+            </form>
+
+            <!-- Loading spinner -->
+            <div id="loading"></div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Reference to the form and extra fields container
+        const form = document.getElementById('careFinderForm');
+        const extraFields = document.getElementById('extraFields');
+
+        // Show/hide fields based on the selected endpoint
+        document.getElementById('endpoint').addEventListener('change', function() {
+            const selectedEndpoint = this.value;
+
+            // Clear previous extra fields
+            extraFields.innerHTML = '';
+
+            // Dynamically add fields based on the selected endpoint
+            if (selectedEndpoint === 'hospitals/id') {
+                extraFields.innerHTML = `
+                    <label for="hospitalId" class="form-label">Enter Hospital ID:</label>
+                    <input type="text" class="form-control" id="hospitalId" name="hospitalId" placeholder="Enter Hospital ID">
+                `;
+            } else if (selectedEndpoint === 'hospitals/city') {
+                extraFields.innerHTML = `
+                    <label for="cityName" class="form-label">Enter City Name:</label>
+                    <input type="text" class="form-control" id="cityName" name="cityName" placeholder="Enter City Name">
+                `;
+            } else if (selectedEndpoint === 'hospitals/state') {
+                extraFields.innerHTML = `
+                    <label for="stateName" class="form-label">Enter State Name:</label>
+                    <input type="text" class="form-control" id="stateName" name="stateName" placeholder="Enter State Name">
+                `;
+            } else if (selectedEndpoint === 'hospitals/county') {
+                extraFields.innerHTML = `
+                    <label for="countyName" class="form-label">Enter County Name:</label>
+                    <input type="text" class="form-control" id="countyName" name="countyName" placeholder="Enter County Name">
+                `;
+            } else if (selectedEndpoint === 'hospitals/citystate') {
+                extraFields.innerHTML = `
+                    <label for="cityName" class="form-label">Enter City Name:</label>
+                    <input type="text" class="form-control" id="cityName" name="cityName" placeholder="Enter City Name">
+                    <label for="stateName" class="form-label mt-2">Enter State Name:</label>
+                    <input type="text" class="form-control" id="stateName" name="stateName" placeholder="Enter State Name">
+                `;
+            } else if (selectedEndpoint === 'hospitals/name') {
+                extraFields.innerHTML = `
+                    <label for="hospitalName" class="form-label">Enter Hospital Name:</label>
+                    <input type="text" class="form-control" id="hospitalName" name="hospitalName" placeholder="Enter Hospital Name">
+                `;
+            }
+        });
+
+        // Form submit handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const selectedEndpoint = document.getElementById('endpoint').value;
+            let apiUrl = `http://www.knautzfamilywi.com/CareFinder-1.0.0/api/${selectedEndpoint}`;
+
+            // Collect relevant data based on the endpoint
+            if (selectedEndpoint === 'hospitals/id') {
+                const hospitalId = document.getElementById('hospitalId').value.trim();
+                apiUrl += `/${hospitalId}`;
+            } else if (selectedEndpoint === 'hospitals/city') {
+                const cityName = document.getElementById('cityName').value.trim();
+                apiUrl += `/${cityName}`;
+            } else if (selectedEndpoint === 'hospitals/state') {
+                const stateName = document.getElementById('stateName').value.trim();
+                apiUrl += `/${stateName}`;
+            } else if (selectedEndpoint === 'hospitals/county') {
+                const countyName = document.getElementById('countyName').value.trim();
+                apiUrl += `/${countyName}`;
+            } else if (selectedEndpoint === 'hospitals/citystate') {
+                const cityName = document.getElementById('cityName').value.trim();
+                const stateName = document.getElementById('stateName').value.trim();
+                apiUrl += `/${cityName}/${stateName}`;
+            } else if (selectedEndpoint === 'hospitals/name') {
+                const hospitalName = document.getElementById('hospitalName').value.trim();
+                apiUrl += `/${hospitalName}`;
+            }
+
+            const fullUrl = `http://localhost:8080/` + apiUrl;
+
+            // Show loading spinner
+            document.getElementById('loading').style.display = 'block';
+
+            // Fetch data using the CORS proxy
+            fetch(fullUrl, {
+                headers: {
+                    'X-API-KEY': 'f5dab187b81a558bf3e57170269221e8' // Replace with your actual API key
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(data => {
+                // Parse the XML response
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(data, "application/xml");
+
+                // Get all <item> elements from the XML
+                const items = xmlDoc.getElementsByTagName('item');
+
+                // Clear any existing results
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = '';
+
+                // Hide the loading spinner once data is loaded
+                document.getElementById('loading').style.display = 'none';
+
+                // Loop through each <item> and display the data in cards
+                for (let i = 0; i < items.length; i++) {
+                    const providerId = items[i].getElementsByTagName('provider_id')[0]?.textContent || 'N/A';
+                    const hospitalName = items[i].getElementsByTagName('hospital_name')[0]?.textContent || 'N/A';
+                    const address = items[i].getElementsByTagName('address')[0]?.textContent || 'N/A';
+                    const city = items[i].getElementsByTagName('city')[0]?.textContent || 'N/A';
+                    const state = items[i].getElementsByTagName('state')[0]?.textContent || 'N/A';
+                    const zipCode = items[i].getElementsByTagName('zip_code')[0]?.textContent || 'N/A';
+                    const countyName = items[i].getElementsByTagName('county_name')[0]?.textContent || 'N/A';
+                    const phoneNumber = items[i].getElementsByTagName('phone_number')[0]?.textContent || 'N/A';
+                    const hospitalType = items[i].getElementsByTagName('hospital_type')[0]?.textContent || 'N/A';
+                    const hospitalOwnership = items[i].getElementsByTagName('hospital_ownership')[0]?.textContent || 'N/A';
+                    const emergencyServices = items[i].getElementsByTagName('emergency_services')[0]?.textContent === 'true' ? 'Yes' : 'No';
+                    const latitude = items[i].getElementsByTagName('latitude')[0]?.textContent || 'N/A';
+                    const longitude = items[i].getElementsByTagName('longitude')[0]?.textContent || 'N/A';
+
+                    // Create a card for each hospital
+                    const card = `
+                        <div class="hospital-card">
+                            <h5>${hospitalName} (ID: ${providerId})</h5>
+                            <p><strong>Address:</strong> ${address}, ${city}, ${state} ${zipCode}</p>
+                            <p><strong>County:</strong> ${countyName}</p>
+                            <p><strong>Phone:</strong> ${phoneNumber}</p>
+                            <p><strong>Type:</strong> ${hospitalType}</p>
+                            <p><strong>Ownership:</strong> ${hospitalOwnership}</p>
+                            <p><strong>Emergency Services:</strong> ${emergencyServices}</p>
+                            <p><strong>Location:</strong> Latitude: ${latitude}, Longitude: ${longitude}</p>
+                        </div>
+                    `;
+                    resultsContainer.innerHTML += card;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+            });
+        });
+    </script>
+
+</body>
+</html>
